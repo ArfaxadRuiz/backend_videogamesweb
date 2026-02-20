@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 # Create your models here.
 class Game(models.Model):
 
@@ -23,7 +23,11 @@ class Game(models.Model):
 
     image = models.ImageField(upload_to='games/', null=True, blank=True)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='games')
+    user = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.CASCADE,
+    related_name='games'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
