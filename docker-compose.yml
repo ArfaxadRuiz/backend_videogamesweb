@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: videojuegos_db
+    restart: always
+    environment:
+      POSTGRES_DB: videojuegos_db
+      POSTGRES_USER: videojuegos_user
+      POSTGRES_PASSWORD: videojuegos_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    container_name: videojuegos_web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./app:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=videojuegos_db
+      - DB_USER=videojuegos_user
+      - DB_PASSWORD=videojuegos_pass
+      - DB_HOST=db
+      - DB_PORT=5432
+
+volumes:
+  postgres_data:
