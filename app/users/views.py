@@ -1,23 +1,40 @@
-from rest_framework import generics
-from .models import User
-from .serializers import UserSerializer
-from rest_framework.views import APIView
+from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth import authenticate
-from django.contrib.auth import get_user_model
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate, get_user_model
+
+from .serializers import UserSerializer
+
+User = get_user_model()
+
+
+# ==============================
+# LISTAR Y CREAR USUARIOS
+# ==============================
 
 class UserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
+# ==============================
+# VER / EDITAR / ELIMINAR USUARIO
+# ==============================
+
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-User = get_user_model()
+    permission_classes = [IsAuthenticated]
+
+
+# ==============================
+# LOGIN CON JWT
+# ==============================
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         username = request.data.get("username")
@@ -26,14 +43,20 @@ class LoginView(APIView):
         user = authenticate(username=username, password=password)
 
         if user is not None:
+            refresh = RefreshToken.for_user(user)
+
             return Response({
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "avatar": user.avatar
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "avatar": user.avatar.url if user.avatar else None
+                }
             })
-        else:
-            return Response(
-                {"error": "Credenciales inválidas"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+
+        return Response(
+            {"error": "Credenciales inválidas"},
+            status=status.HTTP_400_BAD_REQUEST
+        )

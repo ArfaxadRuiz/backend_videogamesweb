@@ -1,8 +1,14 @@
-from django.shortcuts import render
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from .models import Game
 from .serializers import GameSerializer
-# Create your views here.
+
 class GameViewSet(viewsets.ModelViewSet):
-    queryset = Game.objects.all()
     serializer_class = GameSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Game.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
